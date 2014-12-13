@@ -1,4 +1,4 @@
 Native-Code-Examples
 ====================
 
-Native code, C/C++, examples.
+Native code, C/C++, samples.
