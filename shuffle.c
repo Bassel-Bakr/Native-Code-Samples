@@ -59,5 +59,5 @@ int main()
 {
 	IResultListener *listener = calloc(1, sizeof(IResultListener));
 	listener->newResult = myCallback;
-	shuffle("10", 1, listener);
+	shuffle("10", 20, listener);
 }
