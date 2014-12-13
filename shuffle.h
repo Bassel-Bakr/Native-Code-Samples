@@ -59,11 +59,15 @@ static char *UPPER_CASE_ALPHABET = "ABCDEFGHIJKLMNOPQESTUVWXYZ";
 typedef struct IResultListener IResultListener;
 typedef struct HarmonicInt HarmonicInt;
 
+// We are mimiciking OOP style a bit
+
+// An interface-like struct that holds a function pointer which points to callback function memory address
 struct IResultListener
 {
 	void (*newResult) (char *);
 };
 
+// A struct that increments another @param next if it was defined
 struct HarmonicInt
 {
 	int num;
@@ -81,7 +85,7 @@ void increment(HarmonicInt * self)
 	{
 		incrementReset(self);
 	}
-	else if (chars[self->num + 1] == '\0')
+	else if (chars[self->num + 1] == null)
 	{
 		self->reset++;
 	}
@@ -97,8 +101,10 @@ void incrementReset(HarmonicInt * self)
 		done++;
 }
 
+// Here goes the real thing read carefully or get lost in translation!
 void shuffle(char *chrs, int length, IResultListener * listener)
 {
+	// If @param chrs holds just one char
 	if (chrs[1] == null)
 	{
 		char *l = (char *) calloc(1, length + 1);
@@ -110,15 +116,23 @@ void shuffle(char *chrs, int length, IResultListener * listener)
 		free(l);
 		return;
 	}
+	
 	chars = chrs;
 	HarmonicInt *hi = (HarmonicInt *) calloc(length, sizeof(HarmonicInt));
+	
+	// Last HarmonicInt shouldn't define its @param next pointer, that's why we used (length - 1)
 	for (int i = 0; i < length - 1; i++)
 	{
+		// hi[i].next = i[hi].next = (hi + i)->next = (&hi[i])->next
 		hi[i].next = &hi[i + 1];
 	}
 
 	int index;
+	
+	// Time to allocate some memory (equal to length, the +1 is just for terminating null char)
 	char *line = (char *)calloc(length + 1, sizeof(char));
+	
+	// Loop until done's value != 0
 	while (!done)
 	{
 		index = 0;
@@ -126,11 +140,15 @@ void shuffle(char *chrs, int length, IResultListener * listener)
 		{
 			line[index++] = chars[hi[i].num];
 		}
-		line[index] = '\0';
+		line[index] = null;
+		
+		// Is our callback defined? If so, pass it our results one after another
 		if (listener != null)
 			listener->newResult(line);
 		increment(hi);
 	}
+	
+	// Not used anymore
 	free(line);
 	free(hi);
 }
