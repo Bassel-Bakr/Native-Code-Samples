@@ -2,53 +2,6 @@
 
 using namespace std;
 
-typedef unsigned long long ull;
-typedef long double   ld;
-typedef long long     ll;
-typedef pair<int,int> pii;
-typedef vector<int>   vi;
-typedef vector<pii>   vpii;
-typedef pair<ll,ll>   pll;
-typedef vector<ll>    vl;
-typedef vector<pll>   vpll;
-
-#define gc getchar
-#define lsb(x) (x&-x)
-#define blt(x) __builtin_##x
-#define clz blt(clz)
-#define ctz blt(ctz)
-#define ones blt(popcount)
-#define gcd(x,y) __gcd(x,y)
-#define lcm(x,y) (x/__gcd(x,y)*y)
-
-#define rep(i,a,b) for(int i = a; i < b; ++i)
-#define repq(i,a,b) for(int i = a; i <= b; ++i)
-
-#define rev(i,a,b) for(int i = a; i >= b; --i)
-#define revn(i,a,b) for(int i = a; i > b; --i)
-
-#define all(x) x.begin(),x.end()
-#define rall(x) x.rbegin(),x.rend()
-
-#define pb push_back
-#define eb emplace_back
-#define mp make_pair
-#define fi first
-#define se second
-
-int readln(char *w) {
-  scanf(" %[^\n]\n", w);
-  return strlen(w);
-}
-
-double eps = numeric_limits<double>::epsilon();
-double PI = acos(-1);
-int INF = 1e9;
-ll MAX = 1e18;
-int const N = 1e5 + 16;
-int const M = 1e9 + 7;
-int const M2 = 999999983;
-
 struct node {
   int x;
   int s = 1;
@@ -103,9 +56,9 @@ struct sbt {
   }
 
   node* balance(node* p) {
-    while(size(p->l) * 2 < size(p->r))
+    while(size(p->l) < size(p->r)>>1)
       p = rtl(p);
-    while(size(p->r) * 2 < size(p->l))
+    while(size(p->r) < size(p->l)>>1)
       p = rtr(p);
     update(p);
     return p;
@@ -114,32 +67,20 @@ struct sbt {
   void split(int x, node* p, node*& l, node*& r) {
     if(not p) return void(l = r = 0);
 
-    if(x < p->x) {
-      split(x, p->l, l, p->l);
-      p = balance(p);
-      r = p;
-    } else {
-      l = p;
-      split(x, p->r, p->r, r);
-      p = balance(p);
-      l = p;
-    }
+    if(x < p->x)
+      split(x, p->l, l, p->l), r = p;
+    else
+      split(x, p->r, p->r, r), l = p;
   }
 
   void split_at(int idx, node* p, node*& l, node*& r) {
     if(not p) return void(l = r = 0);
 
     int l_size = size(p->l);
-    if(idx < l_size) {
-      split_at(idx, p->l, l, p->l);
-      p = balance(p);
-      r = p;
-    } else {
-      l = p;
-      split_at(idx-l_size-1, p->r, p->r, r);
-      p = balance(p);
-      l = p;
-    }
+    if(idx < l_size)
+      split_at(idx, p->l, l, p->l), r = p;
+    else
+      split_at(idx-l_size-1, p->r, p->r, r), l = p;
   }
 
   node* join(node* l, node* r) {
@@ -147,12 +88,10 @@ struct sbt {
 
     if(l->s > r->s) {
       l->r = join(l->r, r);
-      l = balance(l);
-      return l;
+      return balance(l);
     } else {
       r->l = join(l, r->l);
-      r = balance(r);
-      return r;
+      return balance(r);
     }
   }
 
@@ -198,8 +137,8 @@ struct sbt {
 int main() {
   sbt t;
   int n = 1e5;
-  rep(i,0,n)
-    t.insert(i);
+  for(int i = 0; i < n; ++i)
+    t.insert(rand());
 
   int h = t.print();
   printf("Height = %d\n", h);
