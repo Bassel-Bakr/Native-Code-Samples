@@ -29,6 +29,14 @@ struct fib_heap {
   tnode* old_choosen = 0;
   stack<tnode*> buckets[32];
 
+  ~fib_heap() {
+    for(int id = 0; id < 32; ++id) {
+      join_bucket(id);
+      if(buckets[id].size())
+        delete buckets[id].top();
+    }
+  }
+
   bool empty() {
     return cnt == 0;
   }
