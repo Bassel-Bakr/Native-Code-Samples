@@ -7,6 +7,11 @@ struct node {
   node* f = 0;
   node* kids[26] = {};
   set<int> mark;
+
+  ~node() {
+    for(node* x : kids)
+      delete x;
+  }
 };
 
 struct aho_corasick {
@@ -78,7 +83,7 @@ int main() {
   ac.insert("person", 5);
 
   ac.build();
-  auto v = ac.match("shershelperson", 6);
+  auto v = ac.match("shershe", 6);
   for(int x : v)
     printf("%d\n", x);
 }
