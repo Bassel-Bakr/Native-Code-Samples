@@ -55,11 +55,10 @@ struct aho_corasick {
     for(int i = 0; txt[i]; ++i) {
       int idx = txt[i] - 'a';
 
-      while(not p->kids[idx] && p->f)
+      while(p && not p->kids[idx])
         p = p->f;
 
-      if(p->kids[idx])    
-        p = p->kids[idx];
+      p = p ? p->kids[idx] : root;
 
       for(int x : p->mark)
         occ[x]++;
