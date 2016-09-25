@@ -60,6 +60,8 @@ struct aho_corasick {
 
       if(p->kids[idx])    
         p = p->kids[idx];
+      else
+        continue;
 
       for(int x : p->mark)
         occ[x]++;
