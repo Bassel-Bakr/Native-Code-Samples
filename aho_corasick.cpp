@@ -83,7 +83,11 @@ int main() {
   ac.insert("person", 5);
 
   ac.build();
-  auto v = ac.match("shershe", 6);
-  for(int x : v)
-    printf("%d\n", x);
+  auto count = ac.match("shershelperson", 6);
+  printf("hers %d\n"  , count[0]);
+  printf("help %d\n"  , count[1]);
+  printf("he %d\n"    , count[2]);
+  printf("she %d\n"   , count[3]);
+  printf("son %d\n"   , count[4]);
+  printf("person %d\n", count[5]);
 }
