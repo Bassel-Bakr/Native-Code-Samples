@@ -1,26 +1,88 @@
-#include <bits/stdc++.h>
+#include <iostream>
 
 using namespace std;
 
 struct node {
   int x;
+  int s = 1;
 
-  node* p = 0;
   node* l = 0;
   node* r = 0;
+  node* p = 0;
 
   node(int v) {
     x = v;
   }
 
-  node(node* pp, int v) {
-    p = pp;
-    x = v;    
+  node* upd() {
+    s = 1;
+    if(l) s += l->s;
+    if(r) s += r->s;
+    return this;
   }
 
-  ~node() {
-    delete l;
-    delete r;
+  node* rtl() {
+    p->r = l;
+    if(l) l->p = p;
+
+    l = p;
+
+    auto g = p->p;    
+    if(g) (g->l == p ? g->l : g->r) = this;
+    
+    p->p = this;
+    p->upd();    
+    p = g;    
+    return upd();
+  }
+
+  node* rtr() {
+    p->l = r;
+    if(r) r->p = p;
+
+    r = p;
+
+    auto g = p->p;
+    if(g) (g->l == p ? g->l : g->r) = this;
+    
+    p->p = this;
+    p->upd();
+    p = g;
+    return upd();
+  }
+
+  node* splay() {
+    while(p) {
+      auto g = p->p;
+
+      if(not g && p->l == this)
+        rtr();
+      else if(not g && p->r == this)
+        rtl();
+      else if(g->l == p && p->l == this)
+        p->rtr(), rtr();
+      else if(g->r == p && p->r == this)
+        p->rtl(), rtl();
+      else if(g->l == p && p->r == this)
+        rtl(), rtr();
+      else
+        rtr(), rtl();
+    }
+    return this;
+  }
+
+  node* splay_right() {
+    auto u = this;
+    while(u->r)
+      u = u->r;
+    return u->splay();
+  }
+
+  node* splay_left() {
+    auto u = this;
+    while(u->l)
+      u = u->l;
+    return u->splay();
   }
 };
 
@@ -28,174 +90,113 @@ struct splay_tree {
   node* root = 0;
 
   ~splay_tree() {
-    delete root;
-  }
+    if(not root)
+      return;
 
-  void set_parent(node* p, node* c) {
-    if(c) c->p = p;
-  }
-
-  node* rtr(node* p) {
-    auto g = p->p;
-
-    auto c = p->l;
-    p->l = c->r;
-    c->r = p;
-
-    set_parent(g, c);
-    set_parent(c, p);
-    set_parent(p, p->l);
-    set_parent(p, p->r);
-
-    if(g) {
-      if(g->l == p)      g->l = c;
-      else if(g->r == p) g->r = c;
-      else               abort();
+    vector<node*> q;
+    for(q.emplace_back(root); q.size(); ) {
+      auto u = q.back(); q.pop_back();
+      if(u->l) q.emplace_back(u->l);
+      if(u->r) q.emplace_back(u->r);
+      delete u;
     }
-
-    return c;
   }
 
-  node* rtl(node* p) {
-    auto g = p->p;
+  node* join(node* l, node* r) {
+    if(not l) return r;
+    if(not r) return l;
 
-    auto c = p->r;
-    p->r = c->l;
-    c->l = p;
+    auto lf = l->splay_right();
 
-    set_parent(g, c);
-    set_parent(c, p);
-    set_parent(p, p->l);
-    set_parent(p, p->r);
-
-    if(g) {
-      if(g->l == p)      g->l = c;
-      else if(g->r == p) g->r = c;
-      else               abort();
-    }
-
-    return c;
+    lf->splay();
+    lf->r = r;
+    r->p = lf;
+    return lf->upd();
   }
 
-  void splay(node*& root, node* c) {
-    while(c->p) {
-      auto p = c->p;
-      auto g = p->p;
+  node* lower_bound(node* p, int x) {
+    if(not p)
+      return 0;
 
-      if(c == p->l) {
-        if(not g) rtr(p);
-        else if(g->l == p) rtr(g), rtr(p);
-        else rtr(p), rtl(g);
-      } else {
-        if(not g) rtl(p);
-        else if(g->r == p) rtl(g), rtl(p);
-        else rtl(p), rtr(g);
-      }
-    }
-
-    root = c;
-  }
-
-  void splay(node* c) {
-    splay(root, c);
-  }
-
-  void find(node*& root, int x) {
-    node* prev = 0;
-    node* p = root;
+    node* u = p;
 
     while(p) {
-      prev = p;
-      if(x == p->x)     p = 0;
-      else if(x < p->x) p = p->l;
-      else              p = p->r;
+      u = p;
+      p = (x < p->x) ? p->l : p->r;
     }
 
-    if(prev)
-      splay(root, prev);
+    return u->splay();
   }
 
-  void find(int x) {
-    find(root, x);
+  pair<node*, node*> split(node* p, int x) {
+    if(not p)
+      return make_pair(nullptr, nullptr);
+
+    auto lf = lower_bound(p, x);
+    if(lf->x <= x) {
+      auto l = lf;
+      auto r = lf->r;
+      l->r = 0;
+      if(r) r->p = 0;
+      l->upd();
+      return make_pair(l, r);
+    } else {
+      auto r = lf;
+      auto l = lf->l;
+      r->l = 0;
+      if(l) l->p = 0;
+      r->upd();
+      return make_pair(l, r);
+    }
   }
 
   void insert(int x) {
-    if(not root) {
-      root = new node(x);
-      return;
-    }
-
-    find(x);
-    node *l, *r;
-    if(x > root->x) {
-      l = root;
-      r = l->r;
-      l->r = 0;
-    } else {
-      r = root;
-      l = r->l;
-      r->l = 0;
-    }
-
-    root = new node(x);
-    root->l = l;
-    root->r = r;
-
-    set_parent(root, l);
-    set_parent(root, r);
+    auto t = split(root, x);
+    root = join(t.first, join(new node(x), t.second));
   }
 
   void erase(int x) {
-    find(x);
-    if(not root || x != root->x) return;
-
-    node* l = root->l;
-    node* r = root->r;
-    set_parent(0, l);
-    set_parent(0, r);
-
-    root->l = root->r = 0;
-    delete root;
-
-    if(not l || not r) {
-      root = l ?: r;
-    } else {
-      find(r, -1e9);
-      r->l = l;
-      root = r;
+    auto t = split(root, x);
+    if(t.first) {
+      t.first = t.first->splay_right();
+      if(t.first->x == x) {
+        auto tmp = t.first->l;
+        if(tmp) tmp->p = 0;        
+        delete t.first;    
+        t.first = tmp;     
+      }
     }
-  }
 
-  int print(node* p, int h = -1) {
-    if(not p)
-      return h;
-    int l = print(p->l, h+1);
-    printf("%d\n", p->x);
-    int r = print(p->r, h+1);
-    return max(l, r);
+    root = join(t.first, t.second);
   }
 
   int print() {
     return print(root);
   }
+
+  int print(node* p) {
+    if(not p) return 0;
+    int l = print(p->l);
+    cout << p->x << endl;
+    int r = print(p->r);
+    return 1 + max(l, r);
+  }
 };
 
+
 int main() {
-  int n = 1e5;
+  cin.tie(0);
+  cin.sync_with_stdio(0);
+
 
   splay_tree t;
+  int n = 100;
 
   for(int i = 0; i < n; ++i)
     t.insert(i);
 
-  for(int i = 0; i < 16; ++i)
-    t.find(i);
+  t.erase(21);
+  t.erase(12);
 
-  t.erase(99997);
-  t.erase(99999);
-  t.erase(99980);
-
-  int h = t.print();
-
-  printf("height = %d\n", h);
+  cout << "Height: " << t.print() << endl;
 }
