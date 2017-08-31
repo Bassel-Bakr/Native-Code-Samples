@@ -1,250 +1,112 @@
-#include <iostream>
-#include <algorithm>
-#include <random>
-#include <stack>
+#include<bits/stdc++.h>
 
 using namespace std;
+using ll = long long;
 
-template < class T > struct node {
-	T key;
-	int priority;
-	int size = 1;
-	int sum;
-	int low;
-	int high;
-	node *r = nullptr;
-	node *l = nullptr;
-	node(){}
+int const N = 100 * 1000 + 16;
 
-	 node(T const &key) {
-		low = high = sum = this->key = key;
-		priority = rand();
-	} ~node() {
-		if (r)
-			delete r;
-		r = nullptr;
-		if (l)
-			delete l;
-		l = nullptr;
-	}
+struct node {
+  int x;
+  int s = 1;
+  int y = rand();
+  
+  node* l = 0;
+  node* r = 0;
+  
+  node(int v) {
+    x = v;
+  }
+  
+  ~node() {
+    delete l;
+    delete r;
+  }
+  
+  node* update() {
+    s = 1;
+    if(l) s += l->s;
+    if(r) s += r->s;
+    return this;
+  }
 };
 
-template < class T > struct treap {
-	typedef node < T > tnode;
-	int cnt = 0;
-	tnode *root = nullptr;
-	 treap() {
-	} treap(tnode * r, int c) {
-		root = r;
-		cnt = c;
-	}
-	~treap() {
-		if (root)
-			delete root;
-		root = nullptr;
-	}
-
-	int _print(tnode * p, int h) {
-		auto l = p->l ? _print(p->l, h + 1) : h;
-		//cout << p->key << '\n';
-		auto r = p->r ? _print(p->r, h + 1) : h;
-		return max(l, r);
-	}
-
-	int print() {
-		return root ? _print(root, 0) : 0;
-	}
-
-	void clr() {
-		root = nullptr;
-		cnt = 0;
-	}
-
-	int size(tnode * t) {
-		return t ? t->size : 0;
-	}
-
-	int low(tnode * t) {
-		return t ? t->low : 2e9;
-	}
-
-	int high(tnode * t) {
-		return t ? t->high : -2e9;
-	}
-
-	int sum(tnode * t) {
-		return t ? t->sum : 0;
-	}
-
-	void update(tnode * t) {
-		if (t) {
-			t->size = size(t->l) + 1 + size(t->r);
-			t->low = min(t->key, min(low(t->l), low(t->r)));
-			t->high = max(t->key, max(high(t->l), high(t->r)));
-			t->sum = sum(t->l) + t->key + sum(t->r);
-		}
-	}
-
-	tnode *rotate_right(tnode * p) {
-		auto c = p->l;
-		p->l = c->r;
-		c->r = p;
-		update(p);
-		update(c);
-		return c;
-	}
-
-	tnode *rotate_left(tnode * p) {
-		auto c = p->r;
-		p->r = c->l;
-		c->l = p;
-		update(p);
-		update(c);
-		return c;
-	}
-
-	tnode *rtl(tnode * p) {
-		if (p->priority < p->r->priority)
-			return rotate_left(p);
-		return p;
-	}
-
-	tnode *rtr(tnode * p) {
-		if (p->priority < p->l->priority)
-			return rotate_right(p);
-		return p;
-	}
-
-	tnode *pull(tnode * p, int i) {
-		auto lsize = size(p->l);
-		if (i == lsize)
-			return p;
-		else if (i > lsize) {
-			p->r = pull(p->r, i - lsize - 1);
-			return rotate_left(p);
-		} else {
-			p->l = pull(p->l, i);
-			return rotate_right(p);
-		}
-	}
-	tnode *pull(int i) {
-		return root = pull(root, i);
-	}
-
-	tnode *append(tnode * p, T const &key) {
-		if (!p && ++cnt)
-			return new tnode(key);
-		p->r = append(p->r, key);
-		update(p->r);
-		return rtl(p);
-	}
-
-	tnode *append(T const &key) {
-		root = append(root, key);
-		update(root);
-		return root;
-	}
-
-	tnode *prepend(tnode * p, T const &key) {
-		if (!p && ++cnt)
-			return new tnode(key);
-		p->l = prepend(p->l, key);
-		update(p->l);
-		return rtr(p);
-	}
-
-	tnode *prepend(T const &key) {
-		root = prepend(root, key);
-		update(root);
-		return root;
-	}
-
-	// [l...i] [i+1...r]
-	void split(int i, treap & l, treap & r) {
-		if (i < 0) {
-			l.root = nullptr;
-			l.cnt = 0;
-			r.root = root;
-			r.cnt = cnt;
-		} else if (i >= cnt) {
-			r.root = nullptr;
-			r.cnt = 0;
-			l.root = root;
-			l.cnt = cnt;
-		} else {
-			pull(i);
-			l.root = root;
-			r.root = root->r;
-
-			root->r = nullptr;
-			l.update(root);
-			r.update(root);
-
-			l.cnt = size(l.root);
-			r.cnt = size(r.root);
-		}
-		clr();
-	}
-
-	void merge(treap & l, treap & r) {
-		if (l.cnt == 0) {
-			root = r.root;
-			cnt = r.cnt;
-		} else if (r.cnt == 0) {
-			root = l.root;
-			cnt = l.cnt;
-		} else {
-			l.pull(l.cnt - 1);
-			r.pull(0);
-			root = l.root;
-			root->r = r.root;
-		}
-
-		update(root);
-		cnt = size(root);
-		l.clr();
-		r.clr();
-	}
-
-	void insert_at(int i, T const &key) {
-		if (i <= 0) {
-			prepend(key);
-			return;
-		} else if (i + 1 >  cnt) {
-			append(key);
-			return;
-		}
-		treap a, b;
-		split(i - 1, a, b);
-		a.append(key);
-		merge(a, b);
-	}
-	
-	void clone(tnode &n, tnode& t) {
-	  n.sum = t.sum;
-	  n.high = t.high;
-	  n.low = t.low;
-	  n.size = t.size;
-	  n.priority = t.priority;
-	}
-	
-	tnode query(int l, int r) {
-	  treap a, b, c;
-	  split(l - 1, a, b);
-	  b.split(r - l, *this, c);
-	  tnode q;
-	  clone(q, *root);
-	  b.merge(*this, c);
-	  merge(a, b);
-	  return q;	  
-	}
+struct treap {
+  node* root = 0;
+  
+  ~treap() {
+    delete root;
+  }
+  
+  node* join(node* l, node* r) {
+    if(not l) return r;
+    if(not r) return l;
+    
+    if(l->y < r->y) {
+      l->r = join(l->r, r);
+      return l->update();
+    } else {
+      r->l = join(l, r->l);
+      return r->update();
+    }
+  }
+  
+  pair<node*, node*> split(node* p, int idx) {
+    if(not p)
+      return make_pair(nullptr, nullptr);
+    
+    int lf = (p->l ? p->l->s : 0);
+    
+    if(idx < lf) {
+      auto t = split(p->l, idx);
+      p->l = t.second;
+      t.second = p->update();
+      return t;
+    } else {
+      auto t = split(p->r, idx-lf-1);
+      p->r = t.first;
+      t.first = p->update();
+      return t;
+    }
+  }
+  
+  void insert(int idx, int x) {
+    auto t = split(root, idx-1);
+    root = join(t.first, join(new node(x),  t.second));
+  }
+  
+  void erase(int idx) {
+    auto t1 = split(root, idx-1);
+    auto t2 = split(t1.second, 0);
+    if(t2.first) delete t2.first;
+    t1.second = t2.second;
+    root = join(t1.first, t1.second);
+  }
+  
+  int print() {
+    return print(root);
+  }
+  
+  int print(node* p) {
+    if(not p) return 0;
+    int l = print(p->l);
+    cout << p->x << "\n";
+    int r = print(p->r);
+    return 1 + max(l, r);
+  }
 };
 
 int main()
 {
-	treap < int >t;
-	for (int i = 1; i <= 100000; ++i)
-		t.append(i);
-
-	cout << t.query(0, 9).sum <<'\n';
+	cin.tie(0);
+	cin.sync_with_stdio(0);
+	
+	int n = 10;
+	treap t;
+	for(int i = 1; i <= n; ++i)
+	  t.insert(1, i);
+	  
+	t.erase(2);
+	
+	int h = t.print();
+	cout << "Height: " << endl;
 }
