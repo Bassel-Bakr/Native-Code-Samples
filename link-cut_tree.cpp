@@ -136,7 +136,7 @@ struct link_cut_tree {
     c->pp = 0;
   }
  
-  node* access(int u) {
+  node* access_bug(int u) {
     node *p = nodes[u];
     splay(p);
     while(p->pp) {
@@ -147,6 +147,17 @@ struct link_cut_tree {
     }
     splay(nodes[u]);
     return p;
+  }
+ 
+ node* access(int u) {
+    node* last = nullptr;
+    for (node* y = nodes[u]; y; y = y->pp) {
+      splay(y);
+      attach_child(y, last);
+      last = y;
+    }
+    splay(nodes[u]);
+    return last;
   }
  
   inline void make_root(int u) {
