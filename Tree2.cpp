@@ -1,8 +1,8 @@
-#include <bits/stdc++.h>
+#include "bits/stdc++.h""
 using namespace std;
 using ll = long long;
 
-tuple<vector<int>, multiset<pair<int, int>>, int> dfs(
+tuple<vector<int>, set<pair<int, int>>, int> dfs(
     int const u,                              // node
     int const p,                              // parent
     vector<vector<int>> const& g,             // graph
@@ -16,7 +16,7 @@ tuple<vector<int>, multiset<pair<int, int>>, int> dfs(
 
   int offset = 0;
   vector<int> chain;
-  multiset<pair<int, int>> pending;
+  set<pair<int, int>> pending;
 
   for (auto v : g[u]) {
     if (v == p) continue;
@@ -30,13 +30,12 @@ tuple<vector<int>, multiset<pair<int, int>>, int> dfs(
          v_pending.erase(it++)) {
       auto [d, idx] = *it;
       d -= v_offset;
-      if (int(chain.size()) + 1 /* (u) */ < d) break;
 
-      if (d == 1) {
-        ans[idx] = u;
-      } else {
-        ans[idx] = *(chain.rbegin() + d - 1);
-      }
+      if (d < 0) continue;
+      
+      if (int(chain.size()) < d) break;
+
+      ans[idx] = *(chain.rbegin() + d - 1);
     }
 
     // solve previous values using (v) subtree
@@ -46,13 +45,9 @@ tuple<vector<int>, multiset<pair<int, int>>, int> dfs(
 
       if (d < 0) continue;
 
-      if (int(v_chain.size()) + 1 /* (u) */ < d) break;
+      if (int(v_chain.size()) < d) break;
 
-      if (d == 1) {
-        ans[idx] = u;
-      } else {
-        ans[idx] = *(v_chain.rbegin() + d - 1);
-      }
+      ans[idx] = *(v_chain.rbegin() + d - 1);
     }
 
     // combine
@@ -126,7 +121,7 @@ int main() {
   vector<int> ans(q);
   vector<int> stack, depth(n + 1);
 
-  auto lol = dfs(1, 0, g, queries, node_queries, depth, stack, ans);
+  dfs(1, 0, g, queries, node_queries, depth, stack, ans);
 
   for (auto x : ans) {
     cout << x << '\n';
